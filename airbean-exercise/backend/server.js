@@ -2,13 +2,16 @@ const express = require('express');
 const app = express();
 const jwt = require('jsonwebtoken');
 
-const { getAccountByUsername, saveAccount, saveMenu, getMenu } = require('./database/operations');
+const { getAccountByUsername, saveAccount, saveMenu, getMenu,
+createOrderContainer, saveOrder } = require('./database/operations');
 const { hashPassword, comparePassword } = require('./utils/bcrypt'); 
+const { generateOrderNr, generateETA } = require('./utils/utils');
 
 app.use(express.static('../frontend'));
 app.use(express.json());
 
 saveMenu(); //Spara vår meny till databasen när servern startas
+createOrderContainer(); // Skapar upp en tom array i databasen för att spara våra beställningar
 
 app.post('/api/auth/create', async (request, response) => {
     const credentials = request.body;
@@ -85,6 +88,34 @@ app.get('/api/coffee/menu', async (request, response) => {
 
     response.json(resObj);
 });
+
+app.post('/api/coffee/order', (request, response) => {
+    const token = request.headers.authorization.replace('Bearer ', '');
+    const order = request.body;
+    // Hämta ut beställningen från body
+    console.log(order); //Kolla i terminalen för att se hur beställningen ser ut
+
+    const resObj = {
+        success: false,
+        orderNr: '',
+        eta: ''
+    }
+
+    try {
+        const data = jwt.verify(token, 'a1b1c1'); // Verifera vår token
+        order.username = data.username; // Kopplar samman beställningen med användarnamnet från JWT som skickades med i anropet
+        
+        saveOrder(order); // Spara beställningen till databasen
+
+        resObj.success = true;
+        resObj.orderNr = generateOrderNr();
+        resObj.eta = generateETA();
+    } catch (error) {
+        resObj.errorMessage = 'Token invalid';
+    }
+
+    response.json(resObj);
+})
 
 app.listen(5000, () => {
     console.log('Server started on port 5000');

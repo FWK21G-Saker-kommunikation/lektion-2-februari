@@ -61,4 +61,14 @@ async function getMenu() {
     return menu;
 }
 
-module.exports = { getAccountByUsername, saveAccount, saveMenu, getMenu }
+function createOrderContainer() {
+  database.insert({ type: 'coffee-orders', orders: [] });
+}
+
+function saveOrder(order) {
+  // Letar först upp vårt objekt som heter coffee-orders och sedan i arrayen orders pushar in beställningen (order)
+  database.update({ type: 'coffee-orders' }, { $push: { orders: order } }, {});
+}
+
+module.exports = { getAccountByUsername, saveAccount, saveMenu, getMenu, 
+  createOrderContainer, saveOrder }

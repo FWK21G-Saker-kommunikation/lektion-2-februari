@@ -1,4 +1,28 @@
 const menuElem = document.querySelector('#menu');
+const orderButton = document.querySelector('#order-button');
+const orderNumberElem = document.querySelector('#order-number');
+const etaElem = document.querySelector('#eta');
+
+async function order(order) {
+    const token = sessionStorage.getItem('token');
+
+    const response = await fetch('http://localhost:5000/api/coffee/order', {
+        method: 'POST',
+        body: JSON.stringify(order),
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        }
+    });
+    const data = await response.json();
+    console.log(data);
+
+    if (data.success) {
+        // Visar ordernummer och leveranstid (ETA);
+        orderNumberElem.innerHTML = `Ordernummer: ${data.orderNr}`;
+        etaElem.innerHTML = `Leveranstid: ${data.eta} minuter`;
+    }
+}
 
 function showMenu(menu) {
     // Loopa igenom menyn och för varje menyalternativ:
@@ -7,8 +31,13 @@ function showMenu(menu) {
     // 3. Lägg till li-taggen i menuElem (ul-taggen)
     menu.forEach((menuItem) => {
         const itemElem = document.createElement('li');
-        itemElem.innerHTML = `${menuItem.title} - ${menuItem.price} kr`;
+        itemElem.classList.add('menu-item'); // Sätter en css-klass på min li-tagg som är definerad i styles.css
+        itemElem.innerHTML = `<span>${menuItem.title}</span><span>${menuItem.price} kr</span>`;
         menuElem.append(itemElem);
+
+        itemElem.addEventListener('click', () => { // Kopplar en eventlistener till varje li-tagg
+            order(menuItem); // Gör ett fetch-anrop och skickar med vilken kaffe jag valt
+        });
     });
 }
 
@@ -32,4 +61,9 @@ async function getMenu() {
     }
 }
 
+orderButton.addEventListener('click', () => {
+    order();
+});
+
 getMenu();
+
